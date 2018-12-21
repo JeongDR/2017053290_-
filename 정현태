@@ -1,0 +1,137 @@
+# -*- coding: utf-8 -*-
+'''
+Created on 2018. 12. 20.
+@author: 2017053290 정현태
+1. 거스름돈의 각 동전 개수를 구하는 프로그램 입니다.
+2. 동전의 종류가 변하더라도 최선의 거스름돈 동전 개수를 찾을 수 있도록 하였습니다.
+3. 각 동전의 개수가 최선인 경우 그 최대 개수가 정해져 있다는 점을 생각해 배열을 만들어 해결하였습니다.
+4. 각 동전의 개수를 활용하여 만들 수 있는 경우의 수를 모두 계산하여 배열에 저장해 최소 동전 개수인 경우를 찾았습니다.
+5. 최선인 경우가 여러개 존재하는 경우 모든 경우를 출력합니다.
+'''
+from _ast import Num
+count = 0
+def ListToStrList(list):            # List를 String형태로 바꾸는 함수 - Hash의 KEY값에 List를 넣을 때 사용
+    string = ''                     # String 형태의 배열을 저장할 변수
+    for i in list:                  # List를 하나씩 불러와
+        string = string + ' ' + str(i)    # String에 추가 후       
+    return string.strip()                 # String을 return
+
+def LCM(m, n):                      # 최소 공배수를 구하는 함수 - 생각할 수 있는 동전 개수의 최대값 계산에 사용
+    def GCD(m, n):                  # 최대 공약수를 구하는 함수 - 최소 공배수 계산에 사용
+        while n != 0:               # 최대 공약수의 기본 알고리즘
+            temp = m % n
+            m = n
+            n = temp
+        return abs(m)
+    return m * n / GCD(m, n)        # 최대 공약수를 이용한 최소 공배수 계산법
+
+def MakeTable(basicList, num, result, hashSet, coin):               # 동전의 조합과 화폐가치 합을 저장하는 Hash 테이블을 만드는 함수
+    
+    global count
+    count = count + 1
+    
+    for i in range(len(basicList[num])):                            # 동전의 종류 만큼의 루프를 돌려
+        result[num] = basicList[num][i]                             # 사용한 개수를 결과 List에 저장                     
+        if num == len(basicList) - 1:                               # 각각 동전 조합이 완성된 경우
+            coinSum = 0
+            for j in range(len(result)):                            # 각각의 동전 조합에 대해
+                coinSum = coinSum + (result[j] * coin[j])           # 그 동전 조합의 화폐가치 합을 저장한 후
+            hashSet[ListToStrList(result)] = coinSum                # 동전 조합과 화폐가치 합을 Hash 테이블에 저장 
+        else:
+            MakeTable(basicList, num+1, result,hashSet,coin)        # 동전 조합이 모두 되지 않은 경우 재귀호출
+    #print basicList
+    #print num
+    #print result
+    #print coin
+    #print ''
+
+def Change(change, coinSet):                                        # 동전 조합에 맞는 거스름돈을 계산하는 함수
+    coinSet.sort(reverse=True)                                      # 입력 받은 동전 조합을 내림차순 정렬
+    coinLimit = []                                                  # 동전의 최대 개수를 저장하는 List
+    for i in range(len(coinSet)):                                   # 동전의 종류별로 나올 수 있는 최대 개수를 정렬된 순서대로 계산
+        if i == 0:                                                  # 가장 큰 동전 단위는 잔돈으로 나누어 최대 개수 계산    
+            coinLimit.append(int(change / coinSet[i]))              
+        elif coinSet[i - 1] % coinSet[i] == 0:                      # 다음 큰 동전 단위의 약수인 경우 그 동전을 자신으로 나누어 최대 개수 계산
+            coinLimit.append(int((coinSet[i - 1] / coinSet[i])))
+        else:                                                       # 약수가 아닌 경우 다음 큰 동전과 자신의 최소 공배수를 자신으로 나누어 최대 개수 계산
+            coinLimit.append(min(change / coinSet[i], int(LCM(coinSet[i - 1], coinSet[i]) / coinSet[i])))
+    print(coinLimit)
+    basicList = []                                                  # 동전의 최대 개수 까지의 경우의 수를 저장하는 List
+    for i in coinLimit:                                             # coinLimt List를 이용해
+        basicList.append([col for col in range(i + 1)])             # 최대 개수 까지 경우의 수를 생성
+    result = [0 for col in coinLimit]                               # 경우의 수를 저장할 List 생성
+    hashSet = {}                                                    # 동전의 조합과 화폐가치 합을 저장할 Hash 테이블 선언
+    print (basicList)
+    print (result)
+    print (hashSet)
+    print (coinSet)
+    print ('')
+    MakeTable(basicList, 0, result, hashSet, coinSet)               # Hash 테이블 생성
+    coinList = []                                                   # 각 동전의 개수를 저장할 List 선언
+    countList = []                                                  # 총 동전 개수를 저장할 List 선언
+    for (i,j) in hashSet.items():                                   # 테이블에 있는 모든 경우의 수에 대해
+        if j == change:                                             # 화폐가치 합이 거스름돈과 같은 경우
+                                                                    # 각 동전의 개수를 List로 만들어
+            addList = [int(i.split(' ')[col]) for col in range(len(i.split(' ')))]        
+            coinList.append(addList)                                # coinList List에 추가
+            coinCount = 0                                           # 사용할 동전 개수의 합을 저장할 변수
+            for k in addList:                                       # 각 동전의 개수를 더해
+                coinCount = coinCount + k                           # 변수에 저장 한 후
+            countList.append(coinCount)                             # List에 추가해
+    countList.sort()                                                # 오름차순으로 정렬하여
+    try:                                                                
+        bestCount = countList[0]                                    # 최선의 동전 개수를 저장 - 일치하는 동전 개수가 없는경우 exception
+    except:                                                         # 입력받은 동전 조합으로 거스름돈을 모두 계산할 수 없는 경우
+        print ('** 거스름돈\t:\t' + str(change))                         # 입력받은 정보와 에러를 출력)
+        print ('** 동전의 종류 \t:\t' + str(coinSet))
+        print ('** Error : 현재 가지고 있는 동전들로는 거스름돈을 계산할 수 없습니다.')
+        print ('===============================================')
+        return
+    case = 0                                                        # 최선인 경우의 수를 저장하는 변수
+    for i in coinList:                                              # coinList에 저장된 경우의 수를 확인해 가며 
+        counting = 0                                                # 총 사용한 동전의 개수를 저장하는 변수
+        for j in i:                                                 # 총 사용한 동전의 개수를 계산
+            counting = counting + j
+        if counting == bestCount:                                   # 최선의 동전 개수가 되는 경우
+            case = case + 1   
+                                                                    # 각 동전의 개수를 출력    
+            print ('CASE ' + str(case) + ' : ')
+            print ('\t────────────────────────────')
+            print ('\t** 거스름돈\t:\t' + str(change) + ' 원')
+            print ('\t** 총 동전의 개수\t:\t' + str(bestCount) + ' 개')
+            print ('\t────────────────────────────')
+            print ('\t    동전의 종류\t│\t개수')
+            print ('\t────────────────────────────')
+            for k in range(len(i)):                
+                print ('\t - ' + str(coinSet[k]) + ' 원 짜리\t│\t' + str(i[k]) + ' 개')
+            print ('\t────────────────────────────')
+    print ('===============================================')
+    
+if __name__ == "__main__":
+    print ('\t** 거스름돈 계산 프로그램 **')
+    print ('===============================================')
+    #CHANGE = [400, 900, 1800, 1010, 1700, 1200, 770, 3600]  # 문제에 Test 문제들로 결과를 출력합니다.
+    #coinSet = [500,400,100,50,1]
+    #for i in CHANGE:
+    #    Change(i, coinSet)
+    #CHANGE = [400, 900, 1800, 1010, 1700, 1200, 770, 3600]  # 문제에 Test 문제들로 결과를 출력합니다.
+    #coinSet = [500,400,100,50,10]
+    #for i in CHANGE:
+    #    Change(i, coinSet)
+    #CHANGE2 = [60,360] 
+    #coinSet2 = [100,50,30,10]
+    #for i2 in CHANGE2:
+    #    Change(i2, coinSet2) 
+    #CHANGE3 = [660]     
+    #coinSet3 = [500,300,100,50,30,10]
+    #for i3 in CHANGE3:
+    #    Change(i3, coinSet3)                                                  
+    #CHANGE4 = [660]                                         # 동전의 조합으로 거스름돈을 계산할 수 없는 경우에 대한 예시 입니다.                                              
+    #coinSet4 = [500,300,100]
+    #for i4 in CHANGE4:
+    #    Change(i4, coinSet4)
+    CHANGE5 = [25130]                                         # 수정사항에 대한 예시 입니다.
+    coinSet5 = [10, 50, 100, 400, 500]
+    for i4 in CHANGE5:
+        Change(i4, coinSet5)    
+    print (count)
